@@ -1,0 +1,33 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>WebAR Cube on Plane</title>
+    <!-- A-Frame library -->
+    <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
+    <!-- AR.js for markerless or marker-based AR -->
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.js"></script>
+    <style>
+      body, html { margin: 0; padding: 0; overflow: hidden; }
+      #instructions {
+        position: absolute; top: 10px; left: 10px;
+        background: rgba(255,255,255,0.7); padding: 10px; font-family: sans-serif;
+      }
+    </style>
+  </head>
+
+  <body>
+    <div id="instructions">Point your camera at the marker to see the cube.</div>
+
+    <a-scene embedded arjs="sourceType: webcam; debugUIEnabled: false;">
+      <!-- Plane to act as the table -->
+      <a-marker preset="hiro">
+        <a-plane position="0 0 0" rotation="-90 0 0" width="1" height="1" color="#7BC8A4"></a-plane>
+        <!-- Cube on top of the plane -->
+        <a-box position="0 0.5 0" rotation="0 45 0" color="#4CC3D9" scale="0.3 0.3 0.3"></a-box>
+      </a-marker>
+
+      <a-entity camera></a-entity>
+    </a-scene>
+  </body>
+</html>
