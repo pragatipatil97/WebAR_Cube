@@ -12,6 +12,8 @@
 
     <style>
       body, html { margin: 0; padding: 0; overflow: hidden; }
+
+      /* Make sure controls stay on top of AR canvas */
       #controls {
         position: fixed;
         bottom: 20px;
@@ -23,6 +25,7 @@
         color: white;
         font-family: sans-serif;
         text-align: center;
+        z-index: 9999;  /* 👈 ensure sliders are on top */
       }
       #controls label {
         display: block;
@@ -86,7 +89,7 @@
         const b = breadthSlider.value;
         const h = heightSlider.value;
 
-        // Update cube
+        // Update cube dimensions
         box.setAttribute("width", l);
         box.setAttribute("depth", b);
         box.setAttribute("height", h);
@@ -94,7 +97,7 @@
         // Re-center vertically
         box.setAttribute("position", `0 ${h/2} 0`);
 
-        // Update text labels
+        // Update numeric labels
         lengthVal.textContent = l;
         breadthVal.textContent = b;
         heightVal.textContent = h;
