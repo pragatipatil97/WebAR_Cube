@@ -2,48 +2,107 @@
 <html>
   <head>
     <meta charset="utf-8">
-    <title>AR.js HIRO Cube</title>
+    <title>AR.js HIRO Cube with Sliders</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
     <!-- AR.js -->
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
-    
+
     <style>
       body, html { margin: 0; padding: 0; overflow: hidden; }
-      #instructions {
+      #controls {
         position: fixed;
-        bottom: 10px;
+        bottom: 20px;
         left: 50%;
         transform: translateX(-50%);
+        background: rgba(0,0,0,0.7);
+        padding: 12px 16px;
+        border-radius: 12px;
         color: white;
-        background: rgba(0,0,0,0.6);
-        padding: 8px 12px;
-        border-radius: 8px;
         font-family: sans-serif;
+        text-align: center;
+      }
+      #controls label {
+        display: block;
+        margin: 6px 0;
+      }
+      #controls input {
+        width: 220px;
+      }
+      .value {
+        font-weight: bold;
+        margin-left: 6px;
       }
     </style>
   </head>
   <body>
-    <div id="instructions">Point your camera at the HIRO marker</div>
+    <!-- Slider Controls -->
+    <div id="controls">
+      <label>
+        L (Length): <input id="length" type="range" min="0.1" max="3" step="0.1" value="1">
+        <span id="lengthVal" class="value">1</span>
+      </label>
+      <label>
+        B (Breadth): <input id="breadth" type="range" min="0.1" max="3" step="0.1" value="1">
+        <span id="breadthVal" class="value">1</span>
+      </label>
+      <label>
+        H (Height): <input id="height" type="range" min="0.1" max="3" step="0.1" value="1">
+        <span id="heightVal" class="value">1</span>
+      </label>
+    </div>
 
     <!-- AR Scene -->
     <a-scene
       embedded
       vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; debugUIEnabled: true;">
-
-      <!-- Marker (HIRO) -->
+      arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false;">
+      
       <a-marker preset="hiro">
-        <a-box position="0 0.5 0"
-               material="color: red;"
+        <a-box id="myBox" position="0 0.5 0"
+               color="red"
                depth="1" height="1" width="1">
         </a-box>
       </a-marker>
 
-      <!-- Camera -->
       <a-entity camera></a-entity>
     </a-scene>
+
+    <script>
+      const box = document.getElementById("myBox");
+
+      const lengthSlider = document.getElementById("length");
+      const breadthSlider = document.getElementById("breadth");
+      const heightSlider = document.getElementById("height");
+
+      const lengthVal = document.getElementById("lengthVal");
+      const breadthVal = document.getElementById("breadthVal");
+      const heightVal = document.getElementById("heightVal");
+
+      function updateBox() {
+        const l = lengthSlider.value;
+        const b = breadthSlider.value;
+        const h = heightSlider.value;
+
+        // Update cube
+        box.setAttribute("width", l);
+        box.setAttribute("depth", b);
+        box.setAttribute("height", h);
+
+        // Re-center vertically
+        box.setAttribute("position", `0 ${h/2} 0`);
+
+        // Update text labels
+        lengthVal.textContent = l;
+        breadthVal.textContent = b;
+        heightVal.textContent = h;
+      }
+
+      [lengthSlider, breadthSlider, heightSlider].forEach(slider => {
+        slider.addEventListener("input", updateBox);
+      });
+    </script>
   </body>
 </html>
