@@ -2,48 +2,45 @@
 <html>
   <head>
     <meta charset="UTF-8">
-    <title>WebAR Plane Cube</title>
+    <title>WebXR Plane Cube</title>
     <script src="https://aframe.io/releases/1.4.0/aframe.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/aframe-extras@6.1.1/dist/aframe-extras.min.js"></script>
+  </head>
+  <body>
+    <a-scene embedded xrweb="requiredFeatures: hit-test">
+      <a-box id="cube" color="#4CC3D9" scale="0.2 0.2 0.2"></a-box>
+      <a-camera position="0 1.6 0"></a-camera>
+    </a-scene>
+
     <script>
-      AFRAME.registerComponent('place-on-plane', {
-        init: function () {
-          const sceneEl = this.el.sceneEl;
-          sceneEl.addEventListener('enter-vr', async () => {
-            const session = sceneEl.renderer.xr.getSession();
-            if (!session) return;
+      const scene = document.querySelector('a-scene');
+      const cube = document.querySelector('#cube');
 
-            // Request hit test source
-            const viewerSpace = await session.requestReferenceSpace('viewer');
-            const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
+      scene.addEventListener('enter-vr', async () => {
+        const session = scene.renderer.xr.getSession();
+        if (!session) return;
 
-            sceneEl.renderer.xr.addEventListener('sessionend', () => hitTestSource.cancel());
+        const viewerSpace = await session.requestReferenceSpace('viewer');
+        const hitTestSource = await session.requestHitTestSource({ space: viewerSpace });
 
-            // Update every frame
-            sceneEl.addEventListener('frame', (time, frame) => {
-              const xrFrame = frame;
-              if (!xrFrame) return;
-              const hitTestResults = xrFrame.getHitTestResults(hitTestSource);
-              if (hitTestResults.length > 0) {
-                const hit = hitTestResults[0];
-                const pose = hit.getPose(sceneEl.renderer.xr.getReferenceSpace());
-                if (pose) {
-                  const obj = document.querySelector('#cube');
-                  obj.object3D.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
-                }
-              }
-            });
-          });
-        }
+        session.addEventListener('end', () => hitTestSource.cancel());
+
+        scene.renderer.setAnimationLoop((time, frame) => {
+          if (!frame) return;
+
+          const hitTestResults = frame.getHitTestResults(hitTestSource);
+          if (hitTestResults.length > 0) {
+            const hit = hitTestResults[0];
+            const pose = hit.getPose(scene.renderer.xr.getReferenceSpace());
+            if (pose) {
+              cube.object3D.position.set(
+                pose.transform.position.x,
+                pose.transform.position.y,
+                pose.transform.position.z
+              );
+            }
+          }
+        });
       });
     </script>
-  </head>
-
-  <body>
-    <a-scene xrweb="requiredFeatures: hit-test" embedded>
-      <a-box id="cube" color="#4CC3D9" scale="0.2 0.2 0.2" place-on-plane></a-box>
-      <a-camera></a-camera>
-    </a-scene>
   </body>
 </html>
-
