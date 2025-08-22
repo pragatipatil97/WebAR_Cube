@@ -3,32 +3,249 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>WebAR Cube</title>
-  <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.4.0/model-viewer.min.js"></script>
-  <style>
-    body {
-      margin: 0;
-      overflow: hidden;
-    }
-    model-viewer {
-      width: 100vw;
-      height: 100vh;
-      background-color: #f0f0f0;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web AR - Tap to Place Cube</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, sans-serif;
+            background: #000;
+            overflow: hidden;
+            color: white;
+        }
+        
+        #info {
+            position: absolute;
+            top: 20px;
+            left: 20px;
+            z-index: 100;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 15px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+        
+        #startButton {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            padding: 20px 40px;
+            font-size: 18px;
+            background: #007bff;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+            z-index: 100;
+        }
+        
+        #startButton:hover {
+            background: #0056b3;
+        }
+        
+        #status {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            right: 20px;
+            text-align: center;
+            background: rgba(0, 0, 0, 0.7);
+            padding: 10px;
+            border-radius: 10px;
+            z-index: 100;
+        }
+        
+        canvas {
+            display: block;
+        }
+    </style>
 </head>
 <body>
-  <model-viewer
-    src="cube.glb"           <!-- Your GLB file -->
-    ios-src="cube.usdz"      <!-- Your USDZ file for iOS -->
-    alt="A cube in AR"
-    ar
-    ar-modes="webxr scene-viewer quick-look"
-    camera-controls
-    auto-rotate
-    exposure="1">
-  </model-viewer>
+    <div id="info">
+        <h3>Web AR Cube Placement</h3>
+        <p>1. Click "Start AR" to begin</p>
+        <p>2. Point camera at flat surfaces</p>
+        <p>3. Tap detected planes to place cubes</p>
+    </div>
+    
+    <button id="startButton">Start AR</button>
+    <div id="status">Click "Start AR" to begin</div>
+    
+    <script>
+        let scene, camera, renderer, xrSession, xrReferenceSpace;
+        let hitTestSource = null;
+        let hitTestSourceRequested = false;
+        let cubes = [];
+        let reticle;
+        
+        const startButton = document.getElementById('startButton');
+        const status = document.getElementById('status');
+        
+        // Check if WebXR is supported
+        if (!navigator.xr) {
+            status.textContent = 'WebXR not supported in this browser';
+            startButton.style.display = 'none';
+        } else {
+            // Check if AR is supported
+            navigator.xr.isSessionSupported('immersive-ar').then((supported) => {
+                if (!supported) {
+                    status.textContent = 'AR not supported on this device';
+                    startButton.style.display = 'none';
+                }
+            });
+        }
+        
+        function init() {
+            // Create scene
+            scene = new THREE.Scene();
+            
+            // Create camera
+            camera = new THREE.PerspectiveCamera(70, window.innerWidth / window.innerHeight, 0.01, 20);
+            
+            // Create renderer
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.xr.enabled = true;
+            document.body.appendChild(renderer.domElement);
+            
+            // Add lighting
+            const light = new THREE.HemisphereLight(0xffffff, 0xbbbbff, 1);
+            light.position.set(0.5, 1, 0.25);
+            scene.add(light);
+            
+            // Create reticle (targeting indicator)
+            const reticleGeometry = new THREE.RingGeometry(0.15, 0.2, 32).rotateX(-Math.PI / 2);
+            const reticleMaterial = new THREE.MeshBasicMaterial({ color: 0xff0000 });
+            reticle = new THREE.Mesh(reticleGeometry, reticleMaterial);
+            reticle.visible = false;
+            scene.add(reticle);
+            
+            // Handle controller input (tap to place)
+            const controller = renderer.xr.getController(0);
+            controller.addEventListener('select', onSelect);
+            scene.add(controller);
+            
+            // Start render loop
+            renderer.setAnimationLoop(render);
+        }
+        
+        function onSelect() {
+            if (reticle.visible) {
+                placeCube(reticle.position);
+            }
+        }
+        
+        function placeCube(position) {
+            // Create cube
+            const geometry = new THREE.BoxGeometry(0.2, 0.2, 0.2);
+            const material = new THREE.MeshLambertMaterial({ 
+                color: Math.random() * 0xffffff 
+            });
+            const cube = new THREE.Mesh(geometry, material);
+            
+            // Position cube slightly above the surface
+            cube.position.copy(position);
+            cube.position.y += 0.1;
+            
+            // Add some random rotation
+            cube.rotation.x = Math.random() * Math.PI;
+            cube.rotation.y = Math.random() * Math.PI;
+            cube.rotation.z = Math.random() * Math.PI;
+            
+            scene.add(cube);
+            cubes.push(cube);
+            
+            status.textContent = `${cubes.length} cube(s) placed. Tap to place more!`;
+        }
+        
+        async function startAR() {
+            try {
+                status.textContent = 'Starting AR...';
+                
+                xrSession = await navigator.xr.requestSession('immersive-ar', {
+                    requiredFeatures: ['hit-test']
+                });
+                
+                xrSession.addEventListener('end', onSessionEnd);
+                
+                await renderer.xr.setSession(xrSession);
+                
+                xrReferenceSpace = await xrSession.requestReferenceSpace('local-floor');
+                
+                status.textContent = 'AR started! Point at surfaces and tap to place cubes';
+                startButton.style.display = 'none';
+                
+            } catch (error) {
+                console.error('Failed to start AR:', error);
+                status.textContent = 'Failed to start AR: ' + error.message;
+            }
+        }
+        
+        function onSessionEnd() {
+            xrSession = null;
+            hitTestSource = null;
+            hitTestSourceRequested = false;
+            startButton.style.display = 'block';
+            status.textContent = 'AR session ended. Click "Start AR" to begin again.';
+            
+            // Clear cubes
+            cubes.forEach(cube => scene.remove(cube));
+            cubes = [];
+        }
+        
+        function render(timestamp, frame) {
+            if (frame) {
+                if (!hitTestSourceRequested) {
+                    xrSession.requestHitTestSource({ space: xrReferenceSpace }).then((source) => {
+                        hitTestSource = source;
+                    });
+                    hitTestSourceRequested = true;
+                }
+                
+                if (hitTestSource) {
+                    const hitTestResults = frame.getHitTestResults(hitTestSource);
+                    
+                    if (hitTestResults.length > 0) {
+                        const hit = hitTestResults[0];
+                        const pose = hit.getPose(xrReferenceSpace);
+                        
+                        reticle.visible = true;
+                        reticle.position.set(pose.transform.position.x, pose.transform.position.y, pose.transform.position.z);
+                        reticle.updateMatrixWorld(true);
+                    } else {
+                        reticle.visible = false;
+                    }
+                }
+                
+                // Animate cubes
+                cubes.forEach((cube, index) => {
+                    cube.rotation.x += 0.01;
+                    cube.rotation.y += 0.01;
+                    
+                    // Add slight floating animation
+                    cube.position.y += Math.sin(timestamp * 0.001 + index) * 0.001;
+                });
+            }
+            
+            renderer.render(scene, camera);
+        }
+        
+        // Event listeners
+        startButton.addEventListener('click', startAR);
+        
+        // Handle window resize
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+        
+        // Initialize the app
+        init();
+    </script>
 </body>
+</html>
 </html>
