@@ -1,59 +1,49 @@
-
 <!DOCTYPE html>
-<html lang="en">
+<html>
   <head>
-    <meta charset="utf-8" />
+    <meta charset="utf-8">
     <title>AR.js HIRO Cube</title>
-    <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    
     <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <!-- AR.js for A-Frame -->
-    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js@3.4.2/aframe/build/aframe-ar.min.js"></script>
+    <!-- AR.js -->
+    <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
+    
     <style>
-      html, body { margin: 0; height: 100%; overflow: hidden; background: #000; }
-      .hint {
-        position: fixed; left: 50%; bottom: 12px; transform: translateX(-50%);
-        padding: 8px 12px; border-radius: 12px; font: 14px/1.2 system-ui, sans-serif;
-        color: #fff; background: rgba(0,0,0,.5);
+      body, html { margin: 0; padding: 0; overflow: hidden; }
+      #instructions {
+        position: fixed;
+        bottom: 10px;
+        left: 50%;
+        transform: translateX(-50%);
+        color: white;
+        background: rgba(0,0,0,0.6);
+        padding: 8px 12px;
+        border-radius: 8px;
+        font-family: sans-serif;
       }
     </style>
   </head>
   <body>
-    <div class="hint">Point your camera at the HIRO marker</div>
+    <div id="instructions">Point your camera at the HIRO marker</div>
 
     <!-- AR Scene -->
     <a-scene
-      vr-mode-ui="enabled: false"
       embedded
-      renderer="antialias: true; alpha: true"
-      arjs="sourceType: webcam; debugUIEnabled: false;"
-    >
-      <!-- Track the HIRO marker -->
-      <a-marker preset="hiro">
-        <!-- Cube centered on the marker (0.5 high so it sits on top) -->
-        <a-box
-          position="0 0.5 0"
-          depth="1" height="1" width="1"
-          material="color: #4CC3D9; metalness:0.1; roughness:0.8; opacity:0.95"
-          animation="property: rotation; to: 0 360 0; loop: true; dur: 4000; easing: linear"
-        ></a-box>
+      vr-mode-ui="enabled: false"
+      arjs="sourceType: webcam; debugUIEnabled: true;">
 
-        <!-- Optional: a simple shadow-like plane on the marker -->
-        <a-plane rotation="-90 0 0" width="1.5" height="1.5"
-                 material="color: #000; opacity: 0.15"></a-plane>
+      <!-- Marker (HIRO) -->
+      <a-marker preset="hiro">
+        <a-box position="0 0.5 0"
+               material="color: red;"
+               depth="1" height="1" width="1">
+        </a-box>
       </a-marker>
 
-      <!-- Camera for AR.js -->
+      <!-- Camera -->
       <a-entity camera></a-entity>
     </a-scene>
-
-    <!-- iOS autoplay nudge (some Safari versions need a user gesture) -->
-    <script>
-      document.addEventListener('click', () => {
-        const vid = document.querySelector('video');
-        if (vid && vid.paused) vid.play().catch(()=>{});
-      }, {once:true});
-    </script>
   </body>
 </html>
-
