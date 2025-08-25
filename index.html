@@ -4,15 +4,10 @@
     <meta charset="utf-8">
     <title>AR.js HIRO Cube with Sliders + Backend</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <!-- A-Frame -->
     <script src="https://aframe.io/releases/1.5.0/aframe.min.js"></script>
-    <!-- AR.js -->
     <script src="https://cdn.jsdelivr.net/gh/AR-js-org/AR.js/aframe/build/aframe-ar.min.js"></script>
-
     <style>
       body, html { margin: 0; padding: 0; overflow: hidden; }
-
       #controls {
         position: fixed;
         bottom: 20px;
@@ -26,70 +21,31 @@
         text-align: center;
         z-index: 9999;
       }
-      #controls label {
-        display: block;
-        margin: 6px 0;
-      }
-      #controls input {
-        width: 220px;
-      }
-      .value {
-        font-weight: bold;
-        margin-left: 6px;
-      }
-      #volume {
-        margin-top: 10px;
-        font-size: 16px;
-        font-weight: bold;
-        color: #00ffcc;
-      }
+      #controls label { display: block; margin: 6px 0; }
+      #controls input { width: 220px; }
+      .value { font-weight: bold; margin-left: 6px; }
+      #volume { margin-top: 10px; font-size: 16px; font-weight: bold; color: #00ffcc; }
     </style>
   </head>
   <body>
-    <!-- Slider Controls -->
     <div id="controls">
-      <label>
-        L (Length): <input id="length" type="range" min="0.1" max="3" step="0.1" value="1">
-        <span id="lengthVal" class="value">1</span>
-      </label>
-      <label>
-        B (Breadth): <input id="breadth" type="range" min="0.1" max="3" step="0.1" value="1">
-        <span id="breadthVal" class="value">1</span>
-      </label>
-      <label>
-        H (Height): <input id="height" type="range" min="0.1" max="3" step="0.1" value="1">
-        <span id="heightVal" class="value">1</span>
-      </label>
-      <!-- Volume Display -->
+      <label>L (Length): <input id="length" type="range" min="0.1" max="3" step="0.1" value="1"><span id="lengthVal" class="value">1</span></label>
+      <label>B (Breadth): <input id="breadth" type="range" min="0.1" max="3" step="0.1" value="1"><span id="breadthVal" class="value">1</span></label>
+      <label>H (Height): <input id="height" type="range" min="0.1" max="3" step="0.1" value="1"><span id="heightVal" class="value">1</span></label>
       <div id="volume">Volume: 1.00</div>
     </div>
-
-    <!-- AR Scene -->
-    <a-scene
-      embedded
-      vr-mode-ui="enabled: false"
-      arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false;">
-      
+    <a-scene embedded vr-mode-ui="enabled: false" arjs="sourceType: webcam; facingMode: environment; debugUIEnabled: false;">
       <a-marker preset="hiro">
-        <a-box id="myBox" position="0 0.5 0"
-               color="red"
-               depth="1" height="1" width="1">
-        </a-box>
+        <a-box id="myBox" position="0 0.5 0" color="red" depth="1" height="1" width="1"></a-box>
       </a-marker>
-
       <a-entity camera></a-entity>
     </a-scene>
-
     <script>
-      // Replace this with your deployed FastAPI backend URL
       const API_BASE = "https://arjs-backend.onrender.com";
-
       const box = document.getElementById("myBox");
-
       const lengthSlider = document.getElementById("length");
       const breadthSlider = document.getElementById("breadth");
       const heightSlider = document.getElementById("height");
-
       const lengthVal = document.getElementById("lengthVal");
       const breadthVal = document.getElementById("breadthVal");
       const heightVal = document.getElementById("heightVal");
@@ -99,25 +55,19 @@
         const l = parseFloat(lengthSlider.value);
         const b = parseFloat(breadthSlider.value);
         const h = parseFloat(heightSlider.value);
-
-        // Update cube dimensions
         box.setAttribute("width", l);
         box.setAttribute("depth", b);
         box.setAttribute("height", h);
         box.setAttribute("position", `0 ${h/2} 0`);
-
-        // Update numeric labels
         lengthVal.textContent = l.toFixed(1);
         breadthVal.textContent = b.toFixed(1);
         heightVal.textContent = h.toFixed(1);
 
-        // Call backend to calculate volume
         try {
           const url = `${API_BASE}/volume?l=${encodeURIComponent(l)}&b=${encodeURIComponent(b)}&h=${encodeURIComponent(h)}`;
           const response = await fetch(url);
           if (!response.ok) throw new Error("Network response was not ok");
           const data = await response.json();
-
           if (data.volume !== undefined) {
             volumeText.textContent = `Volume: ${data.volume.toFixed(2)}`;
           } else if (data.error) {
@@ -129,14 +79,8 @@
         }
       }
 
-      // Listen for slider changes
-      [lengthSlider, breadthSlider, heightSlider].forEach(slider => {
-        slider.addEventListener("input", updateBox);
-      });
-
-      // Initialize cube on load
+      [lengthSlider, breadthSlider, heightSlider].forEach(slider => slider.addEventListener("input", updateBox));
       updateBox();
     </script>
   </body>
 </html>
-
