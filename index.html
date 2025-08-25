@@ -104,8 +104,6 @@
         box.setAttribute("width", l);
         box.setAttribute("depth", b);
         box.setAttribute("height", h);
-
-        // Re-center vertically
         box.setAttribute("position", `0 ${h/2} 0`);
 
         // Update numeric labels
@@ -115,10 +113,16 @@
 
         // Call backend to calculate volume
         try {
-          const response = await fetch(`${API_BASE}/volume?l=${l}&b=${b}&h=${h}`);
+          const url = `${API_BASE}/volume?l=${encodeURIComponent(l)}&b=${encodeURIComponent(b)}&h=${encodeURIComponent(h)}`;
+          const response = await fetch(url);
           if (!response.ok) throw new Error("Network response was not ok");
           const data = await response.json();
-          volumeText.textContent = `Volume: ${data.volume.toFixed(2)}`;
+
+          if (data.volume !== undefined) {
+            volumeText.textContent = `Volume: ${data.volume.toFixed(2)}`;
+          } else if (data.error) {
+            volumeText.textContent = `Error: ${data.error}`;
+          }
         } catch (err) {
           console.error("Backend error:", err);
           volumeText.textContent = "Error fetching volume";
@@ -135,3 +139,4 @@
     </script>
   </body>
 </html>
+
